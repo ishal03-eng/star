@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Our Starry Night 🌠</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body, html {
+      margin: 0; padding: 0; height: 100%;
+      overflow: hidden;
+      background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+      font-family: 'Segoe UI', sans-serif;
+    }
+    #canvas, #lineCanvas {
+      position: fixed; top:0; left:0; z-index: 0;
+    }
+    .star {
+      position: absolute;
+      width: 8px; height: 8px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 0 4px white;
+      animation: twinkle 2s infinite;
+      transition: transform 0.2s;
+      z-index: 2;
+    }
+    .star:active { transform: scale(1.4); }
+    @keyframes twinkle { 0%,100%{opacity:0.9}50%{opacity:0.3} }
+
+    #heart {
+      position: absolute; top: 55%; left:50%;
+      transform: translate(-50%,-50%);
+      font-size: 2.5rem; color: red;
+      animation: pulse 1.5s infinite;
+      z-index: 3; text-align: center;
+    }
+    @keyframes pulse { 0%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.2)}100%{transform:translate(-50%,-50%) scale(1)} }
+
+    #countdown {
+      position:absolute; bottom:10px; width:100%;
+      text-align:center; color:#eee; font-size:1rem;
+      z-index:3;
+    }
+    #music-btn {
+      position:absolute; top:10px; right:15px;
+      background: rgba(255,255,255,0.1);
+      color: #fff; border:1px solid #fff;
+      padding:5px 10px; border-radius:5px;
+      font-size:0.9rem; z-index:4;
+    }
+    .modal-content {
+      background: #222; color: #fff; border-radius: 10px;
+      text-align:center; padding:20px;
+    }
+
+    @media (max-width:768px) {
+      .star { width: 6px; height:6px; }
+      #heart { font-size:2rem; }
+      #countdown { font-size:0.9rem; }
+      #music-btn { padding:4px 8px; font-size:0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+<canvas id="lineCanvas"></canvas>
+
+<div id="heart">❤️ I Love You</div>
+<div id="countdown">Loading...</div>
+<button id="music-btn">🎵 Music</button>
+
+<audio id="bg-music" loop>
+  <source src="https://www.bensound.com/bensound-music/bensound-love.mp3" type="audio/mp3">
+</audio>
+
+<div class="modal fade" id="starModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content"><div class="modal-body" id="starMsg"></div></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Canvas setup
+  const canvas = document.getElementById('canvas'),
+        lineCanvas = document.getElementById('lineCanvas'),
+        ctx = canvas.getContext('2d'),
+        lctx = lineCanvas.getContext('2d');
+  function resize() {
+    canvas.width = lineCanvas.width = window.innerWidth;
+    canvas.height = lineCanvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Background stars
+  const bgStars = Array.from({ length: 80 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.5 + 0.2
+  }));
+  function drawBg() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = 'white';
+    bgStars.forEach(s => {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fill();
+    });
+    requestAnimationFrame(drawBg);
+  }
+  drawBg();
+
+  // Star messages & elements
+  const messages = [
+    "You're my guiding light 💡","Our love stronger than distance 🧲","One sky, one heart ❤️",
+    "You're always on my mind 💭","Even apart, we shine together 🌟",
+    "Love is the bridge between us 🌉","Can't wait for 26 July 🗓️",
+    "You’re my favorite star ✨","This night belongs to us 🌌",
+    "Every heartbeat echoes your name 💓","Love knows no bounds 🌍",
+    "We’re written in the stars 📖","Missing you more than words can say 💌",
+    "You're the spark in my sky 🌠","Forever starts soon ⏳","Our story is my favorite 💑",
+    "You shine brighter than the stars 🌟","Hold on, love is near 💞",
+    "Our time is coming closer ⏰","You're the magic in my universe 🪄"
+  ];
+
+  const starEls = messages.map(msg => {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.top = `${10 + Math.random()*80}%`;
+    star.style.left = `${5 + Math.random()*90}%`;
+    star.dataset.msg = msg;
+    document.body.appendChild(star);
+    star.addEventListener('click', () => {
+      document.getElementById('starMsg').textContent = msg;
+      new bootstrap.Modal(document.getElementById('starModal')).show();
+    });
+    return { el: star, x:0, y:0 };
+  });
+
+  function updatePositions() {
+    starEls.forEach(s => {
+      const r = s.el.getBoundingClientRect();
+      s.x = r.left + r.width/2;
+      s.y = r.top + r.height/2;
+    });
+  }
+
+  // Constellation lines
+  function drawLines() {
+    updatePositions();
+    lctx.clearRect(0,0,lineCanvas.width, lineCanvas.height);
+    lctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    lctx.lineWidth = 1;
+    starEls.forEach((s,i) => {
+      starEls.slice(i+1).forEach(s2 => {
+        const dx = s.x - s2.x, dy = s.y - s2.y;
+        if (Math.hypot(dx, dy) < 180) {
+          lctx.beginPath();
+          lctx.moveTo(s.x, s.y);
+          lctx.lineTo(s2.x, s2.y);
+          lctx.stroke();
+        }
+      });
+    });
+    requestAnimationFrame(drawLines);
+  }
+  drawLines();
+
+  // Countdown
+  const countdown = document.getElementById('countdown'),
+        target = new Date('2025-07-26T00:00:00');
+  function tick() {
+    const diff = target - new Date();
+    if (diff <= 0) {
+      countdown.textContent = "💞 We're finally together!";
+      return;
+    }
+    const d = Math.floor(diff/86400000),
+          h = Math.floor(diff/3600000)%24,
+          m = Math.floor(diff/60000)%60,
+          s = Math.floor(diff/1000)%60;
+    countdown.textContent = `💖 Countdown to July 26: ${d}d ${h}h ${m}m ${s}s`;
+    requestAnimationFrame(tick);
+  }
+  tick();
+
+  // Music toggle
+  const music = document.getElementById('bg-music'),
+        musicBtn = document.getElementById('music-btn');
+  let play=false;
+  musicBtn.addEventListener('click', () => {
+    play ? (music.pause(), musicBtn.textContent='🎵 Music') 
+         : (music.play(), musicBtn.textContent='🔇 Pause');
+    play = !play;
+  });
+
+</script>
+</body>
+</html>
